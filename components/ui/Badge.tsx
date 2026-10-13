@@ -1,0 +1,42 @@
+import { cn, STATUS_BADGE, ROLE_COLORS, type Role } from "@/lib/utils";
+
+interface BadgeProps {
+  children: React.ReactNode;
+  variant?: "default" | "success" | "warning" | "danger" | "info";
+  className?: string;
+}
+
+const variants = {
+  default: "bg-gray-100 text-gray-700",
+  success: "bg-green-100 text-green-700",
+  warning: "bg-yellow-100 text-yellow-700",
+  danger: "bg-red-100 text-red-700",
+  info: "bg-blue-100 text-blue-700",
+};
+
+export function Badge({ children, variant = "default", className }: BadgeProps) {
+  return (
+    <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium", variants[variant], className)}>
+      {children}
+    </span>
+  );
+}
+
+export function StatusBadge({ status }: { status: string }) {
+  const color = STATUS_BADGE[status] ?? "bg-gray-100 text-gray-600";
+  const label = status.replace(/_/g, " ");
+  return (
+    <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold capitalize", color)}>
+      {label.toLowerCase()}
+    </span>
+  );
+}
+
+export function RoleBadge({ role }: { role: string }) {
+  const color = ROLE_COLORS[role as Role] ?? "bg-gray-100 text-gray-700";
+  return (
+    <span className={cn("inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold", color)}>
+      {role.replace(/_/g, " ")}
+    </span>
+  );
+}

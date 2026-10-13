@@ -1,0 +1,647 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BETTER AUTH MODELS
+// ═══════════════════════════════════════════════════════════════
+
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  role               Role     @default(PATIENT)
+  phone              String?
+  mustChangePassword Boolean  @default(false)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  sessions Session[]
+  accounts Account[]
+
+  // Role profiles
+  doctorProfile     Doctor?
+  nurseProfile      Nurse?
+  labTechProfile    LabTechnician?
+  pharmacistProfile Pharmacist?
+
+  // Patient relations
+  patientProfile    Patient?
+
+  // Messaging
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+
+  // Audit
+  createdAppointments Appointment[] @relation("CreatedByReceptionist")
+  createdPatients     Patient[]     @relation("RegisteredByReceptionist")
+  createdVisits       Visit[]       @relation("VisitCreatedBy")
+
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("accounts")
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("verifications")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ENUMS
+// ═══════════════════════════════════════════════════════════════
+
+enum Role {
+  ADMIN
+  RECEPTIONIST
+  DOCTOR
+  NURSE
+  LAB_TECHNICIAN
+  PHARMACIST
+  ACCOUNTANT
+  PATIENT
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+// ─── Visit workflow statuses ────────────────────────────────────────────────
+enum VisitStatus {
+  WAITING_TRIAGE      // Just arrived / booked — waiting for nurse
+  IN_TRIAGE           // Nurse is triaging
+  IN_LAB_PROCESS      // Nurse sent to lab before doctor
+  WAITING_DOCTOR      // Triage done, needs doctor
+  IN_CONSULTATION     // Doctor is consulting
+  WAITING_PHARMACY    // Doctor wrote prescription — waiting for dispense
+  COMPLETED           // Visit finished
+  CANCELLED           // Cancelled before completion
+}
+
+enum VisitType {
+  WALK_IN             // Receptionist created
+  ONLINE              // Patient self-booked
+}
+
+enum PatientStatus {
+  REGISTERED
+  WAITING
+  IN_CONSULTATION
+  ADMITTED
+  DISCHARGED
+}
+
+enum LabRequestStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PrescriptionStatus {
+  PENDING
+  DISPENSED
+  CANCELLED
+}
+
+enum BillStatus {
+  DRAFT
+  ISSUED
+  PAID
+  PARTIALLY_PAID
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  INSURANCE
+  BANK_TRANSFER
+}
+
+// ═══════════════════════════════════════════════════════════════
+// DEPARTMENT
+// ═══════════════════════════════════════════════════════════════
+
+model Department {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  doctors Doctor[]
+  nurses  Nurse[]
+  visits  Visit[]
+
+  @@map("departments")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ROLE PROFILES
+// ═══════════════════════════════════════════════════════════════
+
+model Doctor {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  specialization String
+  departmentId   String
+  availability   String?
+  isAvailable    Boolean  @default(true)
+  bio            String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department   Department   @relation(fields: [departmentId], references: [id])
+  appointments Appointment[]
+  prescriptions Prescription[]
+  labRequests  LabRequest[]
+  medicalRecords MedicalRecord[]
+  discharges   Discharge[]
+  visits       Visit[]
+
+  @@map("doctors")
+}
+
+model Nurse {
+  id           String   @id @default(cuid())
+  userId       String   @unique
+  ward         String?
+  departmentId String?
+  isAvailable  Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department Department? @relation(fields: [departmentId], references: [id])
+  vitals     Vitals[]
+  visitVitals VisitVitals[]
+  visits      Visit[]
+
+  @@map("nurses")
+}
+
+model LabTechnician {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  labResults LabResult[]
+  labRequests LabRequest[]
+
+  @@map("lab_technicians")
+}
+
+model Pharmacist {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dispensations Dispensation[]
+
+  @@map("pharmacists")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PATIENT
+// ═══════════════════════════════════════════════════════════════
+
+model Patient {
+  id               String        @id                // FAN / National ID — set explicitly on registration
+  userId           String?       @unique
+  registeredById   String?
+
+  // ── Identity ──────────────────────────────────────────────
+  name             String
+  dateOfBirth      DateTime?
+  gender           String
+  nationality      String?
+  maritalStatus    String?       // Single | Married | Divorced | Widowed
+
+  // ── Contact ───────────────────────────────────────────────
+  phone            String
+  email            String?
+  address          String?
+  city             String?
+  region           String?       // state / province / region
+  country          String?       @default("Ethiopia")
+
+  // ── Medical ───────────────────────────────────────────────
+  bloodGroup       String?
+  allergies        String?
+  chronicConditions String?      // diabetes, hypertension, etc.
+  currentMedications String?
+
+  // ── Previous hospital discharge document ──────────────────
+  dischargeDocument String?     // raw text from discharge summary / referral letter (OCR or manually typed)
+
+  // ── Occupation ────────────────────────────────────────────
+  occupation       String?
+  employer         String?
+
+  // ── Insurance ─────────────────────────────────────────────
+  insuranceProvider String?
+  insurancePolicyNo String?
+
+  // ── Emergency / Next of Kin ───────────────────────────────
+  emergencyContact String?       // name + phone
+  nextOfKinName    String?
+  nextOfKinPhone   String?
+  nextOfKinRelation String?
+
+  // ── Status ────────────────────────────────────────────────
+  status           PatientStatus @default(REGISTERED)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  user         User?         @relation(fields: [userId], references: [id])
+  registeredBy User?         @relation("RegisteredByReceptionist", fields: [registeredById], references: [id])
+
+  appointments   Appointment[]
+  medicalRecords MedicalRecord[]
+  prescriptions  Prescription[]
+  labRequests    LabRequest[]
+  vitals         Vitals[]
+  bills          Bill[]
+  discharges     Discharge[]
+  visits         Visit[]
+
+  @@map("patients")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STEP 2: APPOINTMENT
+// ═══════════════════════════════════════════════════════════════
+
+model Appointment {
+  id            String            @id @default(cuid())
+  patientId     String
+  doctorId      String
+  createdById   String            // receptionist
+  status        AppointmentStatus @default(SCHEDULED)
+  scheduledAt   DateTime
+  type          String            @default("General")
+  chiefComplaint String?
+  notes         String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  patient       Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor        Doctor        @relation(fields: [doctorId], references: [id])
+  createdBy     User          @relation("CreatedByReceptionist", fields: [createdById], references: [id])
+  medicalRecord MedicalRecord?
+
+  @@map("appointments")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STEP 3: MEDICAL RECORD (Doctor's consultation notes)
+// ═══════════════════════════════════════════════════════════════
+
+model MedicalRecord {
+  id             String   @id @default(cuid())
+  patientId      String
+  doctorId       String
+  appointmentId  String?  @unique
+  visitId        String?  @unique
+  diagnosis      String
+  symptoms       String?
+  treatment      String?
+  notes          String?
+  admitPatient   Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  patient     Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor      Doctor       @relation(fields: [doctorId], references: [id])
+  appointment Appointment? @relation(fields: [appointmentId], references: [id])
+  visit       Visit?       @relation(fields: [visitId], references: [id])
+
+  @@map("medical_records")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STEP 4: VITALS (Nurse)
+// ═══════════════════════════════════════════════════════════════
+
+model Vitals {
+  id          String   @id @default(cuid())
+  patientId   String
+  nurseId     String
+  temperature String?
+  bloodPressure String?
+  heartRate   String?
+  oxygenSat   String?
+  weight      String?
+  height      String?
+  notes       String?
+  recordedAt  DateTime @default(now())
+
+  patient Patient @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  nurse   Nurse   @relation(fields: [nurseId], references: [id])
+
+  @@map("vitals")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STEP 5: LAB WORKFLOW
+// ═══════════════════════════════════════════════════════════════
+
+model LabRequest {
+  id          String           @id @default(cuid())
+  patientId   String
+  doctorId    String
+  visitId     String?
+  labTechnicianId String?
+  testName    String
+  testType    String
+  urgency     String           @default("ROUTINE")
+  notes       String?
+  status      LabRequestStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  patient   Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor    Doctor         @relation(fields: [doctorId], references: [id])
+  visit     Visit?         @relation(fields: [visitId], references: [id])
+  labTechnician LabTechnician? @relation(fields: [labTechnicianId], references: [id])
+  labResult LabResult?
+
+  @@map("lab_requests")
+}
+
+model LabResult {
+  id             String   @id @default(cuid())
+  labRequestId   String   @unique
+  labTechnicianId String
+  result         String
+  normalRange    String?
+  interpretation String?
+  fileUrl        String?
+  completedAt    DateTime @default(now())
+  createdAt      DateTime @default(now())
+
+  labRequest     LabRequest    @relation(fields: [labRequestId], references: [id], onDelete: Cascade)
+  labTechnician  LabTechnician @relation(fields: [labTechnicianId], references: [id])
+
+  @@map("lab_results")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STEP 6: PRESCRIPTION & PHARMACY
+// ═══════════════════════════════════════════════════════════════
+
+model Prescription {
+  id        String             @id @default(cuid())
+  patientId String
+  doctorId  String
+  visitId   String?
+  code      String             @unique  // short human-readable code e.g. RX-A3F9
+  status    PrescriptionStatus @default(PENDING)
+  notes     String?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  patient      Patient        @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  doctor       Doctor         @relation(fields: [doctorId], references: [id])
+  visit        Visit?         @relation(fields: [visitId], references: [id])
+  medicines    PrescribedMedicine[]
+  dispensation Dispensation?
+
+  @@map("prescriptions")
+}
+
+model PrescribedMedicine {
+  id             String   @id @default(cuid())
+  prescriptionId String
+  name           String
+  dosage         String
+  frequency      String
+  duration       String
+  instructions   String?
+
+  prescription Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+
+  @@map("prescribed_medicines")
+}
+
+model Dispensation {
+  id             String   @id @default(cuid())
+  prescriptionId String   @unique
+  pharmacistId   String
+  notes          String?
+  dispensedAt    DateTime @default(now())
+
+  prescription Prescription @relation(fields: [prescriptionId], references: [id])
+  pharmacist   Pharmacist   @relation(fields: [pharmacistId], references: [id])
+
+  @@map("dispensations")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STEP 7-8: BILLING & PAYMENT
+// ═══════════════════════════════════════════════════════════════
+
+model Bill {
+  id          String     @id @default(cuid())
+  patientId   String
+  createdById String     // accountant
+  status      BillStatus @default(DRAFT)
+  subtotal    Float      @default(0)
+  tax         Float      @default(0)
+  discount    Float      @default(0)
+  total       Float      @default(0)
+  notes       String?
+  issuedAt    DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  patient  Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  items    BillItem[]
+  payments Payment[]
+
+  @@map("bills")
+}
+
+model BillItem {
+  id          String  @id @default(cuid())
+  billId      String
+  description String
+  category    String  // CONSULTATION | LAB | MEDICINE | ADMISSION | OTHER
+  quantity    Int     @default(1)
+  unitPrice   Float
+  total       Float
+
+  bill Bill @relation(fields: [billId], references: [id], onDelete: Cascade)
+
+  @@map("bill_items")
+}
+
+model Payment {
+  id            String        @id @default(cuid())
+  billId        String
+  amount        Float
+  method        PaymentMethod @default(CASH)
+  reference     String?
+  notes         String?
+  paidAt        DateTime      @default(now())
+
+  bill Bill @relation(fields: [billId], references: [id])
+
+  @@map("payments")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STEP 9: DISCHARGE
+// ═══════════════════════════════════════════════════════════════
+
+model Discharge {
+  id              String   @id @default(cuid())
+  patientId       String
+  doctorId        String
+  dischargeNotes  String?
+  followUpDate    DateTime?
+  dischargedAt    DateTime @default(now())
+
+  patient Patient @relation(fields: [patientId], references: [id])
+  doctor  Doctor  @relation(fields: [doctorId], references: [id])
+
+  @@map("discharges")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// VISIT WORKFLOW (triage → doctor → complete)
+// ═══════════════════════════════════════════════════════════════
+
+model Visit {
+  id              String      @id @default(cuid())
+  patientId       String
+  visitType       VisitType   @default(WALK_IN)
+  status          VisitStatus @default(WAITING_TRIAGE)
+  chiefComplaint  String?
+  scheduledAt     DateTime?   // for online bookings
+  departmentId    String?
+
+  // Assigned staff
+  nurseId         String?
+  doctorId        String?
+
+  // Queue
+  queueNumber     Int?            // assigned at visit creation
+
+  // Triage outcome
+  requiresDoctor  Boolean     @default(false)
+  triageNotes     String?
+  triageCompletedAt DateTime?
+
+  // Consultation outcome
+  consultationNotes String?
+  consultationCompletedAt DateTime?
+
+  // Audit
+  createdById     String      // receptionist or patient (self)
+  completedAt     DateTime?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  patient     Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  nurse       Nurse?       @relation(fields: [nurseId], references: [id])
+  doctor      Doctor?      @relation(fields: [doctorId], references: [id])
+  department  Department?  @relation(fields: [departmentId], references: [id])
+  createdBy   User         @relation("VisitCreatedBy", fields: [createdById], references: [id])
+
+  vitals        VisitVitals?
+  labRequests   LabRequest[]
+  prescriptions Prescription[]
+  medicalRecord MedicalRecord?
+
+  @@map("visits")
+}
+
+model VisitVitals {
+  id            String   @id @default(cuid())
+  visitId       String   @unique
+  nurseId       String
+  temperature   String?
+  bloodPressure String?
+  heartRate     String?
+  oxygenSat     String?
+  weight        String?
+  height        String?
+  notes         String?
+  recordedAt    DateTime @default(now())
+
+  visit Visit @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  nurse Nurse @relation(fields: [nurseId], references: [id])
+
+  @@map("visit_vitals")
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String
+  content    String
+  read       Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  sender   User @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@map("messages")
+}

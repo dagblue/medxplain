@@ -1,0 +1,61 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+.env
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# ── AI model weights & training artifacts (too large for git) ──
+/OCR_MODEL/
+/ocr_training_data/
+/ASSERTION/
+/NER/
+/SUMMARAZATION/
+
+# ── Editor config ──
+.vscode/
+
+# ── Python virtualenvs ──
+/ai_service/venv/
+/ai_service/venv312/
+/ai_service/__pycache__/
+/ai_service/ocr/__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+
+# ── Jupyter notebooks (Colab/Kaggle server launchers) ──
+colab_digitization_server.ipynb
+colab_gpu_server.ipynb
+colab_ocr_server.ipynb
+kaggle_gpu_server.ipynb
+kaggle_debug_notebook.ipynb
