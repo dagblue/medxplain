@@ -119,31 +119,7 @@ export default function LoginPage() {
           </motion.div>
         </div>
 
-        {/* Demo credentials card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-          className="relative z-10 bg-white/10 backdrop-blur-sm rounded-2xl p-5 border border-white/20"
-        >
-          <p className="text-white/70 text-xs font-semibold uppercase tracking-wider mb-3">
-            Demo Credentials
-          </p>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-blue-200">Admin</span>
-              <span className="text-xs text-white font-mono bg-white/10 px-2 py-0.5 rounded">
-                admin@medxplain.com / admin123
-              </span>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-blue-200">Doctor</span>
-              <span className="text-xs text-white font-mono bg-white/10 px-2 py-0.5 rounded">
-                doctor@medxplain.com / doctor123
-              </span>
-            </div>
-          </div>
-        </motion.div>
+        {/* Highlights end */}
       </div>
 
       {/* ── Right panel (form) ── */}
@@ -231,14 +207,7 @@ export default function LoginPage() {
               <div className="flex-1 h-px bg-gray-200" />
             </div>
 
-            {/* Mobile demo creds */}
-            <div className="mt-6 p-4 bg-blue-50 rounded-xl lg:hidden">
-              <p className="text-xs font-semibold text-blue-700 mb-2">Demo Credentials</p>
-              <div className="space-y-1 text-xs text-blue-600 font-mono">
-                <p>admin@medxplain.com / admin123</p>
-                <p>doctor@medxplain.com / doctor123</p>
-              </div>
-            </div>
+
           </motion.div>
 
           <p className="text-center text-xs text-gray-400 mt-8">
