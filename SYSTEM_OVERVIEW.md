@@ -578,8 +578,7 @@ REPORTS
   /api/reports                          POST   Create report
 
 DEBUG
-  /api/debug/doctor                     GET    Show session user vs. Doctor profile
-                                               mismatch (dev/admin diagnostic tool)
+  /api/debug/doctor                     GET    Removed — was a dev diagnostic tool
 
 --------------------------------------------------------------------------------
 SECTION 6 — AI SERVICE API ROUTES

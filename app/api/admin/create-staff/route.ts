@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { prisma, withRetry } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { z } from "zod";
@@ -20,10 +20,8 @@ const createStaffSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  // Allow unauthenticated access only when no users exist yet (first-time setup)
-  // Use retry for Neon cold start
   const session = await auth.api.getSession({ headers: await headers() }).catch(() => null);
-  const userCount = await withRetry(() => prisma.user.count());
+  const userCount = await prisma.user.count();
   const isBootstrap = userCount === 0;
 
   if (!isBootstrap) {
@@ -38,7 +36,7 @@ export async function POST(req: NextRequest) {
   const { name, email, password, role, phone, specialization, departmentId, availability, bio, ward } = parsed.data;
 
   // Check email not already taken
-  const existing = await withRetry(() => prisma.user.findUnique({ where: { email } }));
+  const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return NextResponse.json({ error: "Email already in use" }, { status: 409 });
 
   // Use Better Auth to create the user (handles password hashing)
