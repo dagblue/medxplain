@@ -19,7 +19,7 @@ export const auth = betterAuth({
       mustChangePassword: { type: "boolean", required: false, defaultValue: false, input: false },
     },
   },
-  trustedOrigins: [process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"],
+  trustedOrigins: [process.env.BETTER_AUTH_URL || "http://localhost:3000"],
 });
 
 export type Session = typeof auth.$Infer.Session;
