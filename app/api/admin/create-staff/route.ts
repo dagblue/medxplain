@@ -4,12 +4,6 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { z } from "zod";
 
-// GET — check if bootstrap mode is available (no users exist yet)
-export async function GET() {
-  const userCount = await prisma.user.count();
-  return NextResponse.json({ bootstrap: userCount === 0 });
-}
-
 const createStaffSchema = z.object({
   name: z.string().min(2, "Name required"),
   email: z.string().email("Invalid email"),
@@ -27,13 +21,8 @@ const createStaffSchema = z.object({
 
 export async function POST(req: NextRequest) {
   const session = await auth.api.getSession({ headers: await headers() }).catch(() => null);
-  const userCount = await prisma.user.count();
-  const isBootstrap = userCount === 0;
-
-  if (!isBootstrap) {
-    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    if (session.user.role !== "ADMIN") return NextResponse.json({ error: "Only admins can create staff accounts" }, { status: 403 });
-  }
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (session.user.role !== "ADMIN") return NextResponse.json({ error: "Only admins can create staff accounts" }, { status: 403 });
 
   const body = await req.json();
   const parsed = createStaffSchema.safeParse(body);
@@ -41,32 +30,24 @@ export async function POST(req: NextRequest) {
 
   const { name, email, password, role, phone, specialization, departmentId, availability, bio, ward } = parsed.data;
 
-  // Check email not already taken
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) return NextResponse.json({ error: "Email already in use" }, { status: 409 });
 
-  // Use Better Auth to create the user (handles password hashing)
   let result: any;
   try {
-    result = await auth.api.signUpEmail({
-      body: { name, email, password },
-    });
+    result = await auth.api.signUpEmail({ body: { name, email, password } });
   } catch (e: any) {
     console.error("signUpEmail error:", e);
     return NextResponse.json({ error: e?.message ?? "Failed to create auth account" }, { status: 500 });
   }
 
-  if (!result?.user) {
-    return NextResponse.json({ error: "Failed to create user account" }, { status: 500 });
-  }
+  if (!result?.user) return NextResponse.json({ error: "Failed to create user account" }, { status: 500 });
 
-  // Update role and phone — bootstrap admin doesn't need to change password
   await prisma.user.update({
     where: { id: result.user.id },
-    data: { role: role as any, phone, mustChangePassword: isBootstrap ? false : true },
+    data: { role: role as any, phone, mustChangePassword: true },
   });
 
-  // Create role-specific profile
   if (role === "DOCTOR" && specialization && departmentId) {
     await prisma.doctor.create({
       data: { userId: result.user.id, specialization, departmentId, availability, bio },
