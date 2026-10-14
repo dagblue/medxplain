@@ -19,7 +19,12 @@ export const auth = betterAuth({
       mustChangePassword: { type: "boolean", required: false, defaultValue: false, input: false },
     },
   },
-  trustedOrigins: [process.env.BETTER_AUTH_URL || "http://localhost:3000"],
+  trustedOrigins: [
+    "http://localhost:3000",
+    "https://medxplain.vercel.app",
+    process.env.BETTER_AUTH_URL || "",
+    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "",
+  ].filter(Boolean),
 });
 
 export type Session = typeof auth.$Infer.Session;
