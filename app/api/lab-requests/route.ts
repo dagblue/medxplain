@@ -101,7 +101,6 @@ export async function POST(req: NextRequest) {
             sessionUserId: session.user.id,
             sessionEmail: session.user.email,
             doctorUserIds: allDoctors.map(d => ({ userId: d.userId, name: d.user.name, email: d.user.email })),
-            hint: "Visit /api/debug/doctor to diagnose the mismatch",
           },
         },
         { status: 404 }
@@ -118,7 +117,7 @@ export async function POST(req: NextRequest) {
       testType: parsed.data.testType,
       urgency: parsed.data.urgency,
       notes: parsed.data.notes,
-      doctorId,
+      doctorId: doctorId as string,
       labTechnicianId: body.labTechnicianId || undefined,
     },
     include: { patient: { select: { name: true } } },

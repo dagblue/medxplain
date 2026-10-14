@@ -59,8 +59,8 @@ export function NurseAssignPage({ visit, onBack, onAssigned }: Props) {
     ...Array.from(
       new Map(
         nurses
-          .filter(n => n.department)
-          .map(n => [n.department!.id, n.department!])
+          .filter((n): n is typeof n & { department: NonNullable<typeof n["department"]> } => n.department != null)
+          .map(n => [n.department.id, n.department])
       ).values()
     ).sort((a, b) => a.name.localeCompare(b.name)),
     // nurses with no department

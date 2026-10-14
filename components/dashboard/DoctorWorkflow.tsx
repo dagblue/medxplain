@@ -245,7 +245,7 @@ function ConsultationForm({ visit, onDone }: { visit: Visit; onDone: () => void 
           <p className="text-xs font-bold text-amber-900">📋 Past Clinical History</p>
           {visit.patient?.dischargeDocument && (
             <button
-              onClick={() => navigator.clipboard.writeText(visit.patient.dischargeDocument!).then(() => toast.success("Copied!"))}
+              onClick={() => navigator.clipboard.writeText(visit.patient.dischargeDocument ?? "").then(() => toast.success("Copied!"))}
               className="text-xs font-bold text-amber-800 hover:text-amber-950 bg-amber-200 hover:bg-amber-300 px-2 py-0.5 rounded-lg transition-colors"
             >
               Copy
@@ -281,12 +281,12 @@ function ConsultationForm({ visit, onDone }: { visit: Visit; onDone: () => void 
       {hasLabResults && (
         <div className="p-3 bg-cyan-50 rounded-xl border border-cyan-100 space-y-2">
           <p className="text-xs font-semibold text-cyan-700 flex items-center gap-1"><FlaskConical className="w-3.5 h-3.5" /> Lab Results</p>
-          {visit.labRequests?.filter(r => r.labResult).map(r => (
+          {visit.labRequests?.filter((r): r is typeof r & { labResult: NonNullable<typeof r["labResult"]> } => r.labResult != null).map(r => (
             <div key={r.id} className="bg-white rounded-lg p-2 border border-cyan-100">
               <p className="text-xs font-semibold text-gray-900">{r.testName} <span className="text-gray-400">({r.testType})</span></p>
-              <p className="text-xs text-gray-700 mt-0.5">Result: {r.labResult!.result}</p>
-              {r.labResult!.normalRange && <p className="text-xs text-gray-500">Normal: {r.labResult!.normalRange}</p>}
-              {r.labResult!.interpretation && <p className="text-xs text-blue-700 mt-0.5">{r.labResult!.interpretation}</p>}
+              <p className="text-xs text-gray-700 mt-0.5">Result: {r.labResult.result}</p>
+              {r.labResult.normalRange && <p className="text-xs text-gray-500">Normal: {r.labResult.normalRange}</p>}
+              {r.labResult.interpretation && <p className="text-xs text-blue-700 mt-0.5">{r.labResult.interpretation}</p>}
             </div>
           ))}
         </div>

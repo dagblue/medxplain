@@ -74,8 +74,9 @@ export function AssignStaffInline({ visit, onDone }: { visit: Visit; onDone: () 
         body: JSON.stringify({ nurseId }),
       });
       if (!res.ok) throw new Error("Failed");
+      return res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       const qNum = data?.visit?.queueNumber;
       toast.success(
         `Queue #${qNum ?? "—"} — Nurse assigned · Patient is now IN TRIAGE`,

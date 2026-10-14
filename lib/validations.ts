@@ -221,3 +221,23 @@ export type PaymentInput = z.infer<typeof paymentSchema>;
 export type DischargeInput = z.infer<typeof dischargeSchema>;
 export type MessageInput = z.infer<typeof messageSchema>;
 export type PromoteInput = z.infer<typeof promoteSchema>;
+export type DepartmentInput = z.infer<typeof departmentSchema>;
+
+export const reportSchema = z.object({
+  patientId: z.string().min(1, "Patient required"),
+  doctorId: z.string().optional(),
+  title: z.string().min(1, "Title required"),
+  result: z.string().min(1, "Result required"),
+  fileUrl: z.string().optional(),
+});
+export type ReportInput = z.infer<typeof reportSchema>;
+
+export const userSchema = z.object({
+  name: z.string().min(2, "Name required"),
+  email: z.string().email("Invalid email"),
+  password: z.string().min(6, "Min 6 characters").optional(),
+  phone: z.string().optional(),
+  department: z.string().optional(),
+  role: z.enum(["ADMIN","RECEPTIONIST","DOCTOR","NURSE","LAB_TECHNICIAN","PHARMACIST","ACCOUNTANT","PATIENT"]),
+});
+export type UserInput = z.infer<typeof userSchema>;

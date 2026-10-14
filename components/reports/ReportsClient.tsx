@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { labReportSchema, LabReportInput } from "@/lib/validations";
+import { reportSchema, ReportInput } from "@/lib/validations";
 import { formatDate } from "@/lib/utils";
 import toast from "react-hot-toast";
 
@@ -55,10 +55,10 @@ export function ReportsClient() {
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<LabReportInput>({ resolver: zodResolver(labReportSchema) });
+  } = useForm<ReportInput>({ resolver: zodResolver(reportSchema) });
 
   const mutation = useMutation({
-    mutationFn: async (data: LabReportInput) => {
+    mutationFn: async (data: ReportInput) => {
       const res = await fetch("/api/reports", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

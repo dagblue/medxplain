@@ -502,12 +502,12 @@ export function AIResultViewer({ result, onAutoFill }: AIResultViewerProps) {
                   <span className="font-normal text-gray-400"> · ≥80% confidence only</span>)
                   {result.models?.ner?.chunks > 1 && (
                     <span className="ml-2 text-purple-600 font-semibold bg-purple-50 px-2 py-0.5 rounded-full text-xs normal-case">
-                      {result.models.ner.chunks} chunks
+                      {result.models?.ner?.chunks} chunks
                     </span>
                   )}
                   {result.models?.ner?.total_tokens > 0 && (
                     <span className="ml-1.5 text-gray-400 font-normal text-xs normal-case">
-                      · {result.models.ner.total_tokens} tokens
+                      · {result.models?.ner?.total_tokens} tokens
                     </span>
                   )}
                 </p>
@@ -665,7 +665,7 @@ export function AIResultViewer({ result, onAutoFill }: AIResultViewerProps) {
                   BartForConditionalGeneration · checkpoint-115620 · English only
                   {result.models?.summarization?.chunks > 1 && (
                     <span className="ml-1 text-purple-600 font-semibold bg-purple-50 px-2 py-0.5 rounded-full">
-                      {result.models.summarization.chunks} chunks → hierarchical summary
+                      {result.models?.summarization?.chunks} chunks → hierarchical summary
                     </span>
                   )}
                 </p>
