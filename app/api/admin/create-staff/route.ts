@@ -4,6 +4,12 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { z } from "zod";
 
+// GET — check if bootstrap mode is available (no users exist yet)
+export async function GET() {
+  const userCount = await prisma.user.count();
+  return NextResponse.json({ bootstrap: userCount === 0 });
+}
+
 const createStaffSchema = z.object({
   name: z.string().min(2, "Name required"),
   email: z.string().email("Invalid email"),
